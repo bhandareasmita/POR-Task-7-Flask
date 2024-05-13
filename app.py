@@ -1,5 +1,5 @@
 import secrets
-
+import paho.mqtt.publish as publish
 from flask import Flask, redirect, session, request, url_for
 from flask_cors import CORS
 from authlib.integrations.flask_client import OAuth
@@ -22,7 +22,6 @@ github = oauth.register(
 
 @app.route('/')
 def hello_world():
-    # Display the username retrieved from the session, if available
     if 'user_name' not in session:
         login_button = '<a href="' + url_for('login') + '">Login</a>'
         return f'Hello, stranger. Please {login_button} to continue.'
@@ -50,5 +49,7 @@ def authorize():
     resp.raise_for_status()
     profile = resp.json()
     session['user_name'] = profile['login']
+    message = f"User logged in: {session.get('user_name', 'Stranger')}"
+    publish.single("user/login", message, hostname="broker.emqx.io")
     return redirect('/')
 
